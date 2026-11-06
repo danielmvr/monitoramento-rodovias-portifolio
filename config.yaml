@@ -10,7 +10,7 @@ app:
   periodo_default: 3        # filtro de periodo (dias) padrao no painel
   max_por_consulta: 8       # maximo de noticias por rodovia/consulta
   linhas_raio_km: 40        # raio (km) p/ uma linha ser considerada afetada
-  buscar_hubs: false
+  buscar_hubs: true         # tambem busca noticias por cidades-hub
   fetch_artigo: false
   idioma_news: "pt-BR"
   pais_news: "BR"
@@ -126,4 +126,16 @@ rodovias:
     lat: -13.5600
     lon: -39.9000
 
-hubs: []
+# --------------------------------------------------------------------------
+# CIDADES-HUB para busca adicional por cidade (alem das rodovias).
+# --------------------------------------------------------------------------
+hubs:
+  - { nome: "Juiz de Fora", uf: MG }
+  - { nome: "Belo Horizonte", uf: MG }
+  - { nome: "Volta Redonda", uf: RJ }
+  - { nome: "Sao Paulo", uf: SP }
+  - { nome: "Campinas", uf: SP }
+  - { nome: "Brasilia", uf: DF }
+  - { nome: "Goiania", uf: GO }
+  - { nome: "Curitiba", uf: PR }
+  - { nome: "Feira de Santana", uf: BA }

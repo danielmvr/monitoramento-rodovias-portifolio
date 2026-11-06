@@ -1,0 +1,53 @@
+# Coleta REAL de noticias no Google Noticias (RSS) a cada 30 minutos, com o
+# mesmo pipeline do projeto (filtro, resumo, classificacao, localizacao e
+# linhas afetadas). O resultado vai para o branch 'dados-noticias' (um unico
+# commit, sobrescrito a cada coleta), que o index.html le ao abrir o painel.
+# Se o Google bloquear ou nada vier, o resultado anterior e mantido.
+name: Coleta de noticias
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coleta-noticias
+  cancel-in-progress: false
+
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-coleta.txt
+      - name: Instalar dependencias
+        run: pip install -r requirements-coleta.txt
+      - name: Coletar noticias
+        id: coleta
+        run: |
+          set +e
+          python -m monitor.pipeline "$RUNNER_TEMP/noticias.json"
+          echo "codigo=$?" >> "$GITHUB_OUTPUT"
+      - name: Publicar no branch dados-noticias
+        if: steps.coleta.outputs.codigo == '0'
+        run: |
+          cd "$RUNNER_TEMP"
+          rm -rf dados && mkdir dados && cd dados
+          git init -q -b dados-noticias
+          cp "$RUNNER_TEMP/noticias.json" noticias.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add noticias.json
+          git commit -q -m "Coleta de noticias $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" dados-noticias
+      - name: Coleta sem resultado
+        if: steps.coleta.outputs.codigo != '0'
+        run: echo "::warning::Coleta sem resultado; mantido o arquivo anterior."
