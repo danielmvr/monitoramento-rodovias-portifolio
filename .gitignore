@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+# saidas da coleta ao vivo (opcional): nao versionar
+data/noticias_coletadas.json
+data/geocode_cache.json
+.streamlit/secrets.toml

@@ -1,0 +1,6 @@
+# Opcional: coleta ao vivo de noticias (python -m monitor.pipeline).
+-r requirements.txt
+feedparser>=6.0
+requests>=2.31
+geopy>=2.4
+trafilatura>=1.8

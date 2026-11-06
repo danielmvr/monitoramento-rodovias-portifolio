@@ -1,0 +1,129 @@
+# ==========================================================================
+# Monitoramento de Rodovias (versao de portfolio)
+# Todos os dados lidos pelo painel sao sinteticos, gerados por
+# scripts/gerar_dados_sinteticos.py (seed fixa).
+# ==========================================================================
+
+app:
+  titulo: "Monitoramento de Rodovias"
+  janela_dias: 7            # janela de busca de noticias (dias para tras)
+  periodo_default: 3        # filtro de periodo (dias) padrao no painel
+  max_por_consulta: 8       # maximo de noticias por rodovia/consulta
+  linhas_raio_km: 40        # raio (km) p/ uma linha ser considerada afetada
+  buscar_hubs: false
+  fetch_artigo: false
+  idioma_news: "pt-BR"
+  pais_news: "BR"
+
+# Arquivos sinteticos lidos pelo painel (caminhos relativos a raiz).
+dados:
+  meta: "data/meta.json"
+  noticias: "data/noticias.json"
+  gps: "data/gps_ultimas_posicoes.csv"
+  atrasos: "data/atrasos.txt"
+
+# Regra de atrasos (core.py) e camada de carros no mapa.
+atrasos:
+  limite_min: 60
+  frescor_min: 180
+frota:
+  janela_min: 60
+  raio_km: 15
+  mostrar: true
+
+# Palavras que caracterizam um "problema" na via. A noticia so e mantida se
+# o titulo/resumo contiver pelo menos uma destas E uma referencia a rodovia.
+palavras_problema:
+  - interdicao
+  - interditada
+  - interditado
+  - bloqueio
+  - bloqueada
+  - acidente
+  - colisao
+  - capotamento
+  - tombamento
+  - congestionamento
+  - transito
+  - lentidao
+  - deslizamento
+  - queda de barreira
+  - alagamento
+  - obras
+  - protesto
+  - manifestacao
+  - neblina
+  - feridos
+
+# --------------------------------------------------------------------------
+# RODOVIAS monitoradas. 'aliases' = termos buscados; 'lat'/'lon' = ponto
+# representativo usado no mapa quando a noticia cita so a rodovia.
+# --------------------------------------------------------------------------
+rodovias:
+  - nome: BR-040
+    descricao: "Rio de Janeiro - Juiz de Fora - Belo Horizonte"
+    aliases: ["BR-040"]
+    lat: -21.7642
+    lon: -43.3496
+  - nome: BR-116 (Via Dutra)
+    descricao: "Rio de Janeiro - Sao Paulo"
+    aliases: ["Via Dutra", "Rodovia Presidente Dutra"]
+    lat: -22.4686
+    lon: -44.4509
+  - nome: BR-381 (Fernao Dias)
+    descricao: "Belo Horizonte - Sao Paulo"
+    aliases: ["Fernao Dias", "BR-381"]
+    lat: -21.2453
+    lon: -44.9998
+  - nome: BR-135
+    descricao: "Sete Lagoas - Curvelo - Montes Claros"
+    aliases: ["BR-135"]
+    lat: -18.7561
+    lon: -44.4303
+  - nome: BR-050
+    descricao: "Brasilia - Catalao - Uberlandia - Uberaba"
+    aliases: ["BR-050"]
+    lat: -18.9186
+    lon: -48.2772
+  - nome: Anhanguera (SP-330)
+    descricao: "Sao Paulo - Campinas - Ribeirao Preto"
+    aliases: ["Rodovia Anhanguera", "SP-330"]
+    lat: -22.9099
+    lon: -47.0626
+  - nome: BR-060
+    descricao: "Brasilia - Anapolis - Goiania - Rio Verde - Jatai"
+    aliases: ["BR-060"]
+    lat: -16.6869
+    lon: -49.2648
+  - nome: BR-116 (Regis Bittencourt)
+    descricao: "Sao Paulo - Registro - Curitiba"
+    aliases: ["Regis Bittencourt"]
+    lat: -24.4872
+    lon: -47.8442
+  - nome: BR-101 (Sul)
+    descricao: "Curitiba - Joinville - Florianopolis"
+    aliases: ["BR-101 Santa Catarina"]
+    lat: -26.3045
+    lon: -48.8487
+  - nome: BR-101 (Norte RJ)
+    descricao: "Rio de Janeiro - Rio Bonito - Macae - Campos"
+    aliases: ["BR-101 norte fluminense"]
+    lat: -22.3768
+    lon: -41.7869
+  - nome: RJ-124 (Via Lagos)
+    descricao: "Rio Bonito - Cabo Frio"
+    aliases: ["Via Lagos", "RJ-124"]
+    lat: -22.8728
+    lon: -42.3433
+  - nome: BR-324
+    descricao: "Salvador - Feira de Santana"
+    aliases: ["BR-324"]
+    lat: -12.6200
+    lon: -38.7300
+  - nome: BR-116 (Rio-Bahia)
+    descricao: "Feira de Santana - Vitoria da Conquista"
+    aliases: ["Rio-Bahia"]
+    lat: -13.5600
+    lon: -39.9000
+
+hubs: []
