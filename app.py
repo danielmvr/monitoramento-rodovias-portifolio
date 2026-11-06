@@ -214,6 +214,9 @@ def _parse_dt(s):
         return None
 
 
+TZ_BR_DESLOC = dt.timedelta(hours=-3)
+
+
 @st.cache_data
 def _carregar_noticias():
     try:
@@ -222,9 +225,15 @@ def _carregar_noticias():
     except (OSError, ValueError):
         return [], {}
     itens = payload.get("itens", []) or []
+    meta = payload.get("meta", {}) or {}
+    # A coleta real grava horarios em UTC; o painel exibe em Brasilia (UTC-3).
+    desloc = TZ_BR_DESLOC if meta.get("fuso") == "UTC" else dt.timedelta(0)
     for it in itens:
-        it["publicado"] = _parse_dt(it.get("publicado"))
-    return itens, payload.get("meta", {}) or {}
+        p = _parse_dt(it.get("publicado"))
+        it["publicado"] = p + desloc if p else None
+    ult = _parse_dt(meta.get("atualizado_em"))
+    meta["_atualizado_dt"] = ult + desloc if ult else None
+    return itens, meta
 
 
 def mostrar_mapa(m, altura):
@@ -243,11 +252,23 @@ st.markdown(
     '<div class="gb-brand">MONITORAMENTO RODOVIAS'
     '<small>Interdicoes, transito e ocorrencias cruzadas com a frota</small>'
     '</div></div>', unsafe_allow_html=True)
-st.markdown(
-    f'<div class="gb-aviso"><b>Demo de portfolio.</b> Todos os dados sao '
-    f'sinteticos (linhas, carros, placas, horarios, posicoes e noticias). '
-    f'Relogio fixo no snapshot de {_fmt_dt(AGORA)}.</div>',
-    unsafe_allow_html=True)
+itens_all, _meta_news = _carregar_noticias()
+_ult = _meta_news.get("_atualizado_dt")
+NOTICIAS_REAIS = _meta_news.get("fonte") == "Google Noticias RSS"
+# Referencia do filtro de periodo das noticias: o horario da coleta.
+REF_NOTICIAS = _ult or AGORA
+
+if NOTICIAS_REAIS:
+    _aviso = (f'<b>Noticias reais</b>, coletadas no Google Noticias pelo '
+              f'pipeline do projeto (GitHub Actions, a cada 30 min; ultima '
+              f'coleta {_fmt_dt(_ult)}). <b>Demo de portfolio:</b> linhas, '
+              f'carros, placas, GPS e atrasos sao sinteticos, com relogio '
+              f'fixo no snapshot de {_fmt_dt(AGORA)}.')
+else:
+    _aviso = (f'<b>Demo de portfolio.</b> Todos os dados sao sinteticos '
+              f'(linhas, carros, placas, horarios, posicoes e noticias). '
+              f'Relogio fixo no snapshot de {_fmt_dt(AGORA)}.')
+st.markdown(f'<div class="gb-aviso">{_aviso}</div>', unsafe_allow_html=True)
 
 # ---------- navegacao ----------
 st.sidebar.markdown(
@@ -330,13 +351,11 @@ if _view_atual == "carros":
     st.stop()
 
 # ---------- sidebar: filtros ----------
-itens_all, _meta_news = _carregar_noticias()
-_ult = _parse_dt(_meta_news.get("atualizado_em"))
-
 st.sidebar.markdown('<div class="gb-side-title">FILTROS</div>',
                     unsafe_allow_html=True)
 st.sidebar.markdown(
-    f'<div class="gb-side-upd">Ultima coleta de noticias: {_fmt_dt(_ult)}</div>',
+    f'<div class="gb-side-upd">Ultima coleta de noticias: {_fmt_dt(_ult)}'
+    f'{"<br>Google Noticias, a cada 30 min" if NOTICIAS_REAIS else ""}</div>',
     unsafe_allow_html=True)
 rodovias_disp = sorted({i.get("rodovia", "")
                         for i in itens_all if i.get("rodovia")})
@@ -352,7 +371,8 @@ f_dias = st.sidebar.slider("Periodo (dias)", 1, 7,
                            int(APP.get("periodo_default", 3)), key="f_dias")
 
 st.sidebar.divider()
-st.sidebar.caption(f"Rodovias monitoradas: {len(CFG.get('rodovias', []))}")
+st.sidebar.caption(f"Rodovias monitoradas: {len(CFG.get('rodovias', []))}  |  "
+                   f"Hubs: {len(CFG.get('hubs', []))}")
 
 # ---- controles GPS (carros) ----
 st.sidebar.divider()
@@ -374,7 +394,7 @@ else:
     st.sidebar.caption("GPS indisponivel (arquivo nao encontrado).")
 
 # ---------- filtragem ----------
-limite = AGORA - dt.timedelta(days=int(f_dias))
+limite = REF_NOTICIAS - dt.timedelta(days=int(f_dias))
 
 
 def no_periodo(it):
@@ -423,7 +443,18 @@ def _card_html(it):
     fonte = html.escape(it.get("fonte", "-"))
     d = it.get("publicado")
     dtxt = d.strftime("%d/%m %H:%M") if isinstance(d, dt.datetime) else ""
+    resumo = (it.get("resumo") or "").strip()
+    # No RSS do Google Noticias o resumo costuma repetir o titulo: so exibe
+    # quando acrescenta informacao.
+    resumo_html = ("" if not resumo or resumo[:40] == it.get("titulo", "")[:40]
+                   else f'<div class="gb-resumo">{html.escape(resumo)}</div>')
+    link = it.get("link", "")
+    titulo_html = (f'<a href="{html.escape(link)}" target="_blank" '
+                   f'rel="noopener">{titulo}</a>' if link else titulo)
     acoes = ""
+    if link:
+        acoes += (f'<a class="gb-btn" href="{html.escape(link)}" '
+                  f'target="_blank" rel="noopener">Abrir noticia</a>')
     if it.get("lat") is not None and it.get("lon") is not None:
         acoes += (f'<a class="gb-iconbtn" title="Ver no mapa" '
                   f'aria-label="Ver no mapa" target="_blank" '
@@ -446,8 +477,8 @@ def _card_html(it):
         f'<span class="gb-chip" style="background:{cor};color:{_txt_chip(cor)}">{cat}</span>'
         f'<span class="gb-chip" style="background:{sevcor};color:{_txt_chip(sevcor)}">{sev}</span>'
         f'<span class="gb-actions">{acoes}</span></div>'
-        f'<div class="gb-title">{titulo}</div>'
-        f'<div class="gb-resumo">{html.escape(it.get("resumo", ""))}</div>'
+        f'<div class="gb-title">{titulo_html}</div>'
+        f'{resumo_html}'
         f'<div class="gb-meta"><b>Local:</b> {local} &nbsp;|&nbsp; '
         f'<b>Rodovia:</b> {rod}<br><b>Fonte:</b> {fonte} - {dtxt}</div>'
         f'{linhas_html}</div></div>')
@@ -495,5 +526,7 @@ with col_main:
 st.markdown(
     f'<div class="gb-footer"><span class="gb-ver">v{html.escape(VERSAO)}</span>'
     f'<span class="gb-foot-name">MONITORAMENTO RODOVIAS</span>'
-    f'<span>Demo de portfolio com dados sinteticos</span></div>',
+    f'<span>Demo de portfolio: '
+    f'{"noticias reais do Google Noticias; " if NOTICIAS_REAIS else ""}'
+    f'linhas, frota e atrasos sinteticos</span></div>',
     unsafe_allow_html=True)

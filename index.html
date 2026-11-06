@@ -17,11 +17,33 @@
     <div id="carregando">
       <p><b>Monitoramento de Rodovias</b></p>
       <p>Carregando o Python no navegador (stlite). A primeira abertura leva de 15 a 30 segundos.</p>
-      <p>Demo de portfolio: todos os dados sao sinteticos.</p>
+      <p>Demo de portfolio: noticias reais do Google Noticias; linhas, frota e atrasos sinteticos.</p>
     </div>
   </div>
   <script type="module">
     import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@1.12.0/build/stlite.js";
+
+    // Noticias reais: a coleta do GitHub Actions (.github/workflows/noticias.yml)
+    // grava noticias.json no branch 'dados-noticias'. Se nao der para ler, o
+    // painel usa o arquivo sintetico do repositorio (data/noticias.json).
+    let noticias = { url: "./data/noticias.json" };
+    const dono = location.hostname.split(".")[0];
+    const repo = location.pathname.split("/").filter(Boolean)[0];
+    if (location.hostname.endsWith(".github.io") && repo) {
+      try {
+        const r = await fetch(
+          `https://raw.githubusercontent.com/${dono}/${repo}/dados-noticias/noticias.json?t=${Date.now()}`,
+          { cache: "no-store" });
+        if (r.ok) {
+          const texto = await r.text();
+          JSON.parse(texto);
+          noticias = { data: texto };
+        }
+      } catch (e) {
+        console.warn("Noticias ao vivo indisponiveis; usando o arquivo do repositorio.", e);
+      }
+    }
+
     mount(
       {
         requirements: ["folium", "pyyaml", "jinja2"],
@@ -45,7 +67,7 @@
         "data/gps_ultimas_posicoes.csv": { url: "./data/gps_ultimas_posicoes.csv" },
         "data/linhas_rotas.json": { url: "./data/linhas_rotas.json" },
         "data/meta.json": { url: "./data/meta.json" },
-        "data/noticias.json": { url: "./data/noticias.json" }
+        "data/noticias.json": noticias
         },
         streamlitConfig: {
           "theme.base": "dark",
