@@ -1,4 +1,4 @@
-# Coleta REAL de noticias no Google Noticias (RSS) a cada 30 minutos, com o
+# Coleta REAL de noticias no Google Noticias (RSS) a cada 15 minutos, com o
 # mesmo pipeline do projeto (filtro, resumo, classificacao, localizacao e
 # linhas afetadas). O resultado vai para o branch 'dados-noticias' (um unico
 # commit, sobrescrito a cada coleta), que o index.html le ao abrir o painel.
@@ -7,7 +7,7 @@ name: Coleta de noticias
 
 on:
   schedule:
-    - cron: "7,37 * * * *"
+    - cron: "4,19,34,49 * * * *"
   workflow_dispatch:
 
 permissions:

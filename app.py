@@ -258,10 +258,31 @@ NOTICIAS_REAIS = _meta_news.get("fonte") == "Google Noticias RSS"
 # Referencia do filtro de periodo das noticias: o horario da coleta.
 REF_NOTICIAS = _ult or AGORA
 
+
+def _idade_coleta(meta):
+    """Ha quanto tempo foi a ultima coleta real (texto), pelo relogio UTC."""
+    if meta.get("fuso") != "UTC":
+        return ""
+    ult = _parse_dt(meta.get("atualizado_em"))
+    if not ult:
+        return ""
+    agora_utc = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+    mins = int((agora_utc - ult).total_seconds() // 60)
+    if mins < 0:
+        return ""
+    if mins < 60:
+        return f"ha {mins} min"
+    return f"ha {mins // 60}h{mins % 60:02d}"
+
+
+_IDADE = _idade_coleta(_meta_news)
+_ULT_TXT = (f"{_fmt_dt(_ult)} (horario de Brasilia"
+            f"{', ' + _IDADE if _IDADE else ''})") if _ult else "-"
+
 if NOTICIAS_REAIS:
     _aviso = (f'<b>Noticias reais</b>, coletadas no Google Noticias pelo '
-              f'pipeline do projeto (GitHub Actions, a cada 30 min; ultima '
-              f'coleta {_fmt_dt(_ult)}). <b>Demo de portfolio:</b> linhas, '
+              f'pipeline do projeto (GitHub Actions, agendada a cada 15 min; '
+              f'ultima coleta {_ULT_TXT}). <b>Demo de portfolio:</b> linhas, '
               f'carros, placas, GPS e atrasos sao sinteticos, com relogio '
               f'fixo no snapshot de {_fmt_dt(AGORA)}.')
 else:
@@ -354,8 +375,8 @@ if _view_atual == "carros":
 st.sidebar.markdown('<div class="gb-side-title">FILTROS</div>',
                     unsafe_allow_html=True)
 st.sidebar.markdown(
-    f'<div class="gb-side-upd">Ultima coleta de noticias: {_fmt_dt(_ult)}'
-    f'{"<br>Google Noticias, a cada 30 min" if NOTICIAS_REAIS else ""}</div>',
+    f'<div class="gb-side-upd">Ultima coleta de noticias: {_ULT_TXT}'
+    f'{"<br>Google Noticias, agendada a cada 15 min" if NOTICIAS_REAIS else ""}</div>',
     unsafe_allow_html=True)
 rodovias_disp = sorted({i.get("rodovia", "")
                         for i in itens_all if i.get("rodovia")})
