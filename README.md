@@ -116,3 +116,7 @@ scripts/
 
 - O motor de atrasos não lê matrícula, nome de guerra nem nome do motorista (`usecols` exclui essas colunas), e nenhuma saída do painel identifica o motorista.
 - No sistema original, o painel roda apenas na rede interna da empresa e lê arquivos locais. Esta versão pública usa somente dados sintéticos.
+
+## Projetos relacionados
+
+[Apoio CCO](https://github.com/danielmvr/apoio-cco-portifolio) ([versão web](https://danielmvr.github.io/apoio-cco-portifolio/)): mapa de apoio ao CCO com pontos de apoio, contatos, posição dos carros, ocorrências de socorro e carros candidatos ao socorro. Lê a frota sintética deste repositório, com as mesmas cidades, empresas e carros.
